@@ -1,2 +1,2 @@
 Logging tutorial:
-[Logging HOWTO auf der offiziellen Webseite](http://docs.python.org/2/howto/logging.html)
+http://docs.python.org/2/howto/logging.html
