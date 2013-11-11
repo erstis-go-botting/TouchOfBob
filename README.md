@@ -11,4 +11,6 @@ bei allen Authoren. Aber auch um gewisse Funktionalitäten schneller und besser
 
 ###### Learning by doing:
 
+[Pythoneinführung auf Khanacademy](https://www.khanacademy.org/science/computer-science-subject)
+
 [Logging HOWTO auf der offiziellen Webseite](http://docs.python.org/2/howto/logging.html)
