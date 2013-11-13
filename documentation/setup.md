@@ -31,4 +31,12 @@ Für den Bot brauchen wir die Module BeautifulSoup4 (für das Parsing von html, 
 emulieren zu können).
 
 Im Prinzip funktioniert die Installation dieser Module mit dem Befehl "easy\_install BeautifulSoup4" und "easy\_install 
-mechanize"
+mechanize".
+
+Unter Windows muss man unter Umständen mit der Konsole zuerst in das "C:\Python27\Scripts" Verzeichnis navigieren, was mit dem 
+"cd" Befehl geht. Alternativ dazu kann man auch den Ordner, in dem easy_install.exe liegt öffnen und mit Shift-Rechtsklick 
+direkt eine Konsole vor Ort öffnen.
+
+Um zu prüfen, ob die Installationen erfolgreich waren, kann man eine Pythonkonsole öffnen und die Befehle
+"import mechanize" sowie "import BeautifulSoup" ausführen. Sollten beide Befehle keine Fehlermeldung zurückgeben,
+könnte die Installation erfolgreich gewesen sein. Das ist toll!
