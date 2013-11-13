@@ -17,6 +17,8 @@ bei allen Authoren. Aber auch um gewisse Funktionalitäten schneller und besser
 
 [Logging HOWTO auf der offiziellen Webseite](http://docs.python.org/2/howto/logging.html)
 
+[Mechanize cheatsheet](https://views.scraperwiki.com/run/python_mechanize_cheat_sheet/?)
+
 
 ###### From learnpythonthehardway.org:
 >In the fairy tales about heroes defeating evil villains there's always a dark forest of some kind.

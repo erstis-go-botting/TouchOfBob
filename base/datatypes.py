@@ -1,6 +1,7 @@
 # coding=utf-8
 # Put custom datatypes in here!
 
+
 class Village(object):
     """
     Eine Klasse um Dörfer zu repräsentieren.
