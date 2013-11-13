@@ -30,5 +30,5 @@ EasyInstall kann so benützt werden:
 Für den Bot brauchen wir die Module BeautifulSoup4 (für das Parsing von html, yay!) und Mechanize (um einen Webbrowser
 emulieren zu können).
 
-Im Prinzip funktioniert die Installation dieser Module mit dem Befehl "easy_install BeautifulSoup4" und "easy_install 
+Im Prinzip funktioniert die Installation dieser Module mit dem Befehl "easy\_install BeautifulSoup4" und "easy\_install 
 mechanize"
