@@ -39,6 +39,15 @@ def colorprint(string, color='blue'):
     :type string: string, obviously
     :param color: the color you want to use.
     :type color: string
+
+    guideline:
+    red: something went wrong / is bad...
+    yellow: trying to fix something.
+    green: fixed something.
+    blue: important, but of recurring events.
+    turq: important, but often recurring events.
+    magenta: something special has happened.
+    white: everything as usual. not of particular interest.
     """
 
     colors = {'red': 31, 'green': 32, 'yellow': 33, 'blue': 34, 'magenta': 35, 'turq': 36, 'white': 37}
