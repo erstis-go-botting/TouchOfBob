@@ -1,13 +1,24 @@
 # coding=utf-8
+""" settinggeneration
+
+In diesem File ist genau eine Klasse, SettingGen, die verschiedene
+Funktionen bereitstellt um Settings (d.h. ini files) überprüfen &
+erstellen zu können.
+"""
+
 
 import time
 import ConfigParser
 import os
 from tools import colorprint
+import logging
 
 
 class SettingGen(object):
     def __init__(self):
+
+        self.logger = logging.getLogger('main.SettingGen')
+        self.logger.info('creating an instance of SettingGen')
 
         if not os.path.exists('settings/'):
             os.makedirs('settings/')

@@ -49,7 +49,7 @@ class Bot(object):
         # move to overview
         self.open('overview')
 
-        return 1 if self.is_logged_in(self) else 0
+        return 1 if self.is_logged_in() else 0
 
     def is_logged_in(self):
         """
