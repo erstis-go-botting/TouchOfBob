@@ -4,6 +4,7 @@ __author__='sudo'
 import logging
 import os
 from toolbox.setinggeneration import SettingGen
+from toolbox.tools import buildings_cost
 
 
 def create_rootlogger():
@@ -42,3 +43,4 @@ def startup_check():
 logger = create_rootlogger()
 
 startup_check()
+buildings_cost()
