@@ -5,6 +5,7 @@ import logging
 import os
 from toolbox.setinggeneration import SettingGen
 
+
 def create_rootlogger():
     """
     Creating a root logger :)
@@ -23,8 +24,10 @@ def create_rootlogger():
     fh.setFormatter(formatter)
     # add the handlers to the logger
     logger.addHandler(fh)
+
     logger.info('created logger')
     return logger
+
 
 def startup_check():
     """

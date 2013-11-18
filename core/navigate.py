@@ -33,6 +33,7 @@ class Bot(object):
         # if we are already logged in, we don't need to login again
         if self.is_logged_in():
             print 'already logged in'
+            return 1
 
         # fetch the credentials.
         username = self.config.get('credentials', 'username')
@@ -40,7 +41,7 @@ class Bot(object):
 
         # login parameter
         parameters = {'user': username,
-                    'password': password}
+                      'password': password}
         data=urllib.urlencode(parameters)
 
         # login
