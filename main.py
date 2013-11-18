@@ -40,6 +40,9 @@ def startup_check():
     logger.info('Calling SettingGen().check_general_settings')
     SettingGen().check_general_settings()
 
+    # Wurde die buildingscost.db schon initialisiert?
+
+
 logger = create_rootlogger()
 
 startup_check()
