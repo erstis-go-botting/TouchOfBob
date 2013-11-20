@@ -42,7 +42,7 @@ class Bot(object):
         # login parameter
         parameters = {'user': username,
                       'password': password}
-        data=urllib.urlencode(parameters)
+        data = urllib.urlencode(parameters)
 
         # login
         self.br.open('http://www.die-staemme.de/index.php?action=login&server_%s' % self.world, data)

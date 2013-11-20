@@ -8,9 +8,9 @@ erstellen zu können.
 
 
 import time
-import ConfigParser
+import configparser
 import os
-from tools import colorprint
+from toolbox.tools import colorprint
 import logging
 
 
@@ -25,7 +25,7 @@ class SettingGen(object):
             colorprint('Folder [settings] did not exist. Created it.', 'green')
 
         self.settingpath = "settings/settings.ini"
-        self.config=ConfigParser.SafeConfigParser(allow_no_value=True)
+        self.config=configparser.SafeConfigParser(allow_no_value=True)
         self.config.read(self.settingpath)
 
     def check_general_settings(self):
@@ -57,7 +57,7 @@ class SettingGen(object):
             self.config.set('storage', 'path', os.path.join(os.path.expanduser('~'), 'bot_storage'))
             colorprint('[storage] in [{self.settingpath}] did not exist. Created it.'.format(**locals()), 'green')
 
-        self.config.write(open(self.settingpath, 'wb'))
+        self.config.write(open(self.settingpath, 'w'))
 
     def generate_skeleton_villagesettings(self, village_id, village_name):
         """
@@ -65,13 +65,13 @@ class SettingGen(object):
         """
 
         settingpath=self.config.get('storage', 'worldsettingspath')
-        config=ConfigParser.SafeConfigParser(allow_no_value=True)
+        config=configparser.SafeConfigParser(allow_no_value=True)
         config.read(settingpath)
 
         village_id = str(village_id)
 
         if config.has_section(village_id):
-            print 'woah, stop right there, that shit allready exists.'
+            print('woah, stop right there, that shit allready exists.')
             return
 
         config.add_section(village_id)
@@ -85,7 +85,7 @@ class SettingGen(object):
         config.set(village_id, 'church', '0')
         config.set(village_id, 'Dorftyp', 'off')
 
-        with open(settingpath, 'wb') as cfile:
+        with open(settingpath, 'w') as cfile:
             config.write(cfile)
             time.sleep(1)
 
@@ -101,7 +101,7 @@ class SettingGen(object):
         self.config.set('description', '# Die Settings in settings/settings.ini/control sind immernoch relevant.')
         self.config.set('description', '# Diese werden quasi als globale Settings verwendet.')
 
-        with open(path, 'wb') as cfile:
+        with open(path, 'w') as cfile:
             self.config.write(cfile)
 
     def generate_description_general_settings(self):
@@ -118,7 +118,7 @@ class SettingGen(object):
         self.config.set('description', '# und von Welt zu Welt verschieden sind. Diese Daten hier können')
         self.config.set('description', '# nicht automatisch generiert werden.')
 
-        with open(self.settingpath, 'wb') as cfile:
+        with open(self.settingpath, 'w') as cfile:
             self.config.write(cfile)
 
 

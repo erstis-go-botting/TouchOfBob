@@ -29,7 +29,6 @@ def create_rootlogger():
     logger.info('created logger')
     return logger
 
-
 def startup_check():
     """
     Hier werden alle verschiedene Verzeichnisse & Einstellungen geprüft,
@@ -42,8 +41,7 @@ def startup_check():
 
     # Wurde die buildingscost.db schon initialisiert?
 
-
 logger = create_rootlogger()
 
 startup_check()
-buildings_cost()
+#buildings_cost()

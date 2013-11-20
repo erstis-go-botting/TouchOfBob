@@ -5,10 +5,9 @@
 # andern Funktionalitäten des Bots sind.
 
 import math
-import mechanize
 import shelve
 from bs4 import BeautifulSoup
-import ConfigParser
+import configparser
 
 
 def distance(dorf1, dorf2):
@@ -54,7 +53,7 @@ def colorprint(string, color='blue'):
     """
 
     colors = {'red': 31, 'green': 32, 'yellow': 33, 'blue': 34, 'magenta': 35, 'turq': 36, 'white': 37}
-    print "\033[%sm%s\033[0m" % (colors[color], string)
+    print("\033[%sm%s\033[0m" % (colors[color], string))
 
 
 def buildings_cost(AH=1, statue=1, church=1):
@@ -70,14 +69,14 @@ def buildings_cost(AH=1, statue=1, church=1):
     urlsnormal = ['Hauptgebäude', 'Kaserne', 'Stall', 'Werkstatt','Schmiede', 'Versammlungsplatz', 'Marktplatz',
                   'Bauernhof', 'Speicher', 'Versteck', 'Wall', 'Holzfäller', 'Lehmgrube', 'Eisenmine', 'Statue']
 
-    print urlsnormal
+    print(urlsnormal)
     #print urlsprem
 
     #specify the path, where the shelve.db file gets stored
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read('settings/settings.ini')
     path = config.get('storage', 'path') + '\\buildingcost.db'
-    print path
+    print(path)
 
     #emulating a browser
     br = mechanize.Browser()
@@ -119,7 +118,7 @@ def buildings_cost(AH=1, statue=1, church=1):
             shelf[e][level] = dic
             shelf.sync()
 
-            print shelf[e][level]
+            print(shelf[e][level])
     #don't waste ram. close our shelve
     shelf.close()
 
