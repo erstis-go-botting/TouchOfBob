@@ -42,6 +42,7 @@ def colorprint(string, color='blue'):
     :param color: the color you want to use.
     :type color: string
 
+
     guideline:
     red: something went wrong / is bad...
     yellow: trying to fix something.
