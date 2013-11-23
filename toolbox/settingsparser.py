@@ -18,7 +18,7 @@ class SettingsParser(object):
         #the url + building[i] is the address where this functions gets the buildingscosts
         url = 'http://help.die-staemme.de/wiki/'
         building = ['Hauptgebäude', 'Kaserne', 'Stall', 'Werkstatt','Schmiede', 'Versammlungsplatz', 'Marktplatz',
-                    'Bauernhof', 'Speicher', 'Versteck', 'Wall', 'Holzfäller', 'Lehmgrube', 'Eisenmine', 'Statue']
+                    'Bauernhof', 'Speicher', 'Versteck', 'Wall', 'Holzfäller', 'Lehmgrube', 'Eisenmine', 'Statue', 'Adelshof']
 
 
         #specify the path, where the shelve.db file gets stored
@@ -34,7 +34,7 @@ class SettingsParser(object):
         for element in building:
 
             # initialize new dict & fetch the page
-            shelf[element] = dict()
+            shelf[element.lower] = dict()
             html = requests.get(url + element).text
 
             # Get the table of all levels
@@ -63,10 +63,40 @@ class SettingsParser(object):
                 dic = {'wood': wood, 'stone': stone, 'iron': iron}
 
                 #write this dict in our shelve
-                shelf[element][level] = dic
+                shelf[element.lower][level] = dic
                 shelf.sync()
 
                 print(shelf[element][level])
+
+        #get the required resources for the church
+        shelf['church'] = dict()
+        html = requests.get(url + 'Kirche').text
+
+        #get all tables from the site
+        soup = BeautifulSoup(html)
+        table = soup.find_all('table')[3]
+
+        #get the rows out of the table
+        rows = table.find_all('tr')[1:]
+
+        #get the values of each cell for each level
+        for row in rows:
+
+            #split the line into its cells
+            splitrow = row.find_all('td')
+
+            #get the required wood, stone and iron for each level
+            level = int(splitrow[0].get_text(strip=True))
+            wood = int(splitrow[1].get_text(strip=True).replace('.',''))
+            stone = int(splitrow[2].get_text(strip=True).replace('.',''))
+            iron = int(splitrow[3].get_text(strip=True).replace('.',''))
+
+            #create a dictionary with the required resources
+            dic = {'wood': wood, 'stone': stone, 'iron': iron}
+
+            #fill our shelve with this dic
+            shelf['church'][level] = dic
+            shelf.sync()
 
         #don't waste ram. close our shelve
         shelf.close()
