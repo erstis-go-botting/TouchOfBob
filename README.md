@@ -11,6 +11,8 @@ bei allen Authoren. Aber auch um gewisse Funktionalitäten schneller und besser
 
 ###### Learning by doing:
 
+[Codecademy](http://www.codecademy.com/dashboard)
+
 [Wahrscheinlich das beste Pythontutorial online](http://learnpythonthehardway.org/book/)
 
 [Pythoneinführung auf Khanacademy](https://www.khanacademy.org/science/computer-science-subject)
