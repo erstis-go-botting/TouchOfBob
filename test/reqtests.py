@@ -42,7 +42,6 @@ def login():
     """
     meine_threads = list()
 
-
     payload = {'user': 'main.py', 'password': '996324f8bd524b326e4f258ad75a7d394f5b9326'}
     session = requests.session()
     session.post('http://www.die-staemme.de/index.php?action=login&server_de100', data=payload, verify=False)
@@ -104,9 +103,6 @@ def get_var_game_data(html):
         raise TypeError
     return var_game_settings
 
-
-
-print('here')
 login()
 
 

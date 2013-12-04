@@ -4,8 +4,14 @@
 # direkt auf die DS zugreifen.
 # sie dienen als interface zwischen der programmlogik und der webseite an sich
 
-import ConfigParser
-import urllib
+import configparser
+import requests
+import logging
+from json import loads
+import datetime
+from base.datatypes import TimedBuildings
+from base.datatypes import Ressources
+from toolbox.settingparser import get_buildingprice
 
 
 class Bot(object):
@@ -13,16 +19,33 @@ class Bot(object):
     Accesses the website and provides functionality to operate there.
     """
 
-    def __init__(self, br):
-        # br muss ein Browser sein, geliefert vom mechanize Modul.
-        self.br = br
-        self.html = 'Not initialized yet. Will be initialized with first self.open call.'
+    # Create a lovely session!
+    session = requests.Session()
+    session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/17.0 Firefox/17.0'})
+    html = 'Not initialized yet. Will be initialized with first self.open call.'
 
-        self.config = ConfigParser.ConfigParser()
+    def __init__(self):
+        # Bot.session ist eine session vom requests modul
+
+        self.buildings = 'Not initialized yet. Will be initialized with first self.open call.'
+        self.gamedat = 'Not initialized yet. Will be initialized with first self.open call.'
+        self.csrf = 'Not initialized yet. Will be initialized with first self.open call.'
+        self.currentvillage = 'Not initialized yet. Will be initialized with first self.open call.'
+        self.ressources = 'Not initialized yet. Will be initialized with first self.open call.'
+
+        self.config = configparser.ConfigParser()
         self.config.read(r'settings\settings.ini')
 
         # get some settings which we will use everywhere.
-        self.world=self.config.get('credentials', 'world')
+        self.world = self.config.get('credentials', 'world')
+
+        # Create a logger
+        self.logger = logging.getLogger('main.Bot')
+        self.logger.info('Bot initialized.')
+
+        # login (if necessary)
+        self.login()
+
 
     def login(self):
         """
@@ -32,32 +55,35 @@ class Bot(object):
 
         # if we are already logged in, we don't need to login again
         if self.is_logged_in():
-            print 'already logged in'
-            return 1
+            print('Already logged in')
+            return
+
+        print('Logging in')
+        self.logger.info('Login procedure.')
 
         # fetch the credentials.
         username = self.config.get('credentials', 'username')
         password = self.config.get('credentials', 'password')
 
         # login parameter
-        parameters = {'user': username,
-                      'password': password}
-        data = urllib.urlencode(parameters)
+        data = {'user': username,
+                'password': password}
 
         # login
-        self.br.open('http://www.die-staemme.de/index.php?action=login&server_%s' % self.world, data)
+        Bot.session.post('http://www.die-staemme.de/index.php?action=login&server_%s' % self.world, data=data)
 
         # move to overview
         self.open('overview')
 
         return 1 if self.is_logged_in() else 0
 
-    def is_logged_in(self):
+    @staticmethod
+    def is_logged_in():
         """
         Checks if self.br is currently logged in.
         Returns 1 if is logged in else 0.
         """
-        return 1 if 'var game_data' in self.html else 0
+        return 1 if 'var game_data' in Bot.html else 0
 
     def open(self, place):
         """
@@ -65,5 +91,108 @@ class Bot(object):
         """
 
         # Opens an url and gets the response (= html)
-        self.html = self.br.open("http://{self.world}.die-staemme.de/game.php?screen={place}".format(**locals())).response().read()
+        Bot.html = Bot.session.get("http://{self.world}.die-staemme.de/game.php?screen={place}".format(**locals())).text
+        self.gamedat = self.get_var_game_data()
+
+        # Wichtige Variablen
+        self.csrf = self.gamedat['csrf']
+        self.currentvillage = self.gamedat['village']['buildings']['village']
+        self.ressources = Ressources(wood=self.gamedat['village']['wood'],
+                                     stone=self.gamedat['village']['stone'],
+                                     iron=self.gamedat['village']['iron'])
+        self.buildings = VarGameDataHandler(self.gamedat).get_buildings()
+
+    def get_next_building(self):
+        """
+        Extracts data from 'settings\buildings.txt'
+        and sets the variable next_building.
+        """
+        fileo = open(r'settings\buildings.txt', 'r').readlines()
+        for line in fileo:
+            line = line.strip().split()
+            if line:
+                building, lvl = line[0], int(line[1])
+                if self.buildings[building] < lvl:
+                    return building
+
+        return ''
+
+    @staticmethod
+    def get_var_game_data():
+        """
+        get's sexy schmexy var_game_data
+        """
+
+        vg = None
+        for line in Bot.html.split('\n'):
+            if 'var game_data' in line:
+                vg = line.split('=', 1)[1].strip()[:-1]
+                print(vg)
+                break
+
+        try:
+            vg = loads(vg)
+        except TypeError:
+            print('dataminer.var_game_data got no json object. this shouldn\'t happen')
+            print('probably implement botprot right here')
+            raise TypeError
+        return vg
+
+    def construct_building(self, building, level):
+        # unfortunately we seem to need this ;(
+        self.open('main')
+
+        url = "http://{self.world}.die-staemme.de/game.php?village={self.currentvillage}&ajaxaction=upgrade_building&h={self.csrf}" \
+              "&type=main&screen=main&id={building}&force=1&destroy=0&source={self.currentvillage}".format(**locals())
+        resp = Bot.session.get(url).json()
+        if resp['success'] != 'Das Gebäude wurde in Auftrag gegeben.':
+            print('Status war: ', resp['success'])
+            print('Dies ist ein kritischer Fehler. \n Auslösende url: ', url)
+            exit()
+
+        now = datetime.datetime.now()
+        delta = datetime.timedelta(seconds=resp['date_complete'])
+        completed = now+delta
+        return completed
+
+    def building_manager(self):
+        """constructs buildings"""
+
+        storage = TimedBuildings()
+        if len(storage):
+            print('Something is beeing constructed right now. not sexy.')
+            return
+        next_building = self.get_next_building()
+        print(next_building)
+        print(self.ressources)
+        print(self.buildings[next_building])
+
+        level = self.buildings[next_building]+1
+        # Get price of next building, with level: currentlevel +1
+        price = get_buildingprice(next_building, level)
+
+        # do we have enough to build this shit?
+        if self.ressources > price:
+            print('trying to build', next_building)
+            response = self.construct_building(next_building, level)
+            storage.add(art=next_building, level=level, completed=response)
+
+
+
+
+
+
+
+class VarGameDataHandler(object):
+    """Verarbeitet Daten, die immer zur Verfügung stehen."""
+
+    def __init__(self, vg):
+        """vg muss dem var gamedata objekt entsprechen"""
+        self.vg = vg
+
+    def get_buildings(self):
+        """get's sexy schmexy buildings"""
+        buildings = self.vg['village']['buildings']
+        buildings = {key: int(buildings[key]) for key in buildings}
+        return buildings
 

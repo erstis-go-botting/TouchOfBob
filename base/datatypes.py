@@ -1,6 +1,9 @@
 # coding=utf-8
 # Put custom datatypes in here!
 
+from configparser import ConfigParser
+import datetime
+import shelve
 
 class Village(object):
     """
@@ -65,14 +68,24 @@ class Ressources(object):
         """ Comparison with "<"
         (Compares if each Value is smaller)
         """
-        pass
+        l1 = [self.wood, self.stone, self.iron]
+        l2 = [other.wood, other.stone, other.iron]
+        for i in range(3):
+            if l1[i] > l2[i]:
+                return False
+        return True
 
     def __gt__(self, other):
-     """ Coparison with ">"
-     (Compares if each Value is larger)
-     """
-     for value in [self.wood, self.stone, self.iron]:
-         pass
+        """ Coparison with ">"
+        (Compares if each Value is larger)
+        """
+        l1 = [self.wood, self.stone, self.iron]
+        l2 = [other.wood, other.stone, other.iron]
+        for i in range(3):
+            if l1[i] < l2[i]:
+                return False
+        return True
+
 
 
     def __abs__(self):
@@ -98,3 +111,44 @@ class Ressources(object):
         self.iron *= other.iron
 
 
+class TimedBuildings(object):
+
+    def __init__(self):
+
+        self.config = ConfigParser()
+        self.config.read('settings/settings.ini')
+        self.storagepath = self.config.get('storage', 'path')
+        self.db = shelve.open(self.storagepath + '\\timedbuildings.db')
+
+    def refresh(self):
+
+        self.db.close()
+        self.db = shelve.open(self.storagepath + '\\timedbuildings.db')
+
+    def add(self, art, level, completed):
+
+        key = 'under_construction'
+        if key in self.db:
+            temp = self.db[key]
+            temp.append({'art': art, 'level': level, 'complete': completed})
+            self.db[key] = temp
+        else:
+            self.db[key] = [{'art': art, 'level': level, 'complete': completed}]
+        self.refresh()
+
+    def __str__(self):
+        if 'under_construction' not in self.db:
+            return 0
+        result = ""
+        for element in self.db['under_construction']:
+            result = result+str(element)+"\n"
+        return result
+
+    def __len__(self):
+        if 'under_construction' not in self.db:
+            return 0
+        else:
+            return len(self.db['under_construction'])
+
+    def __del__(self):
+        self.db.close()

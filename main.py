@@ -4,7 +4,8 @@ __author__='sudo'
 import logging
 import os
 from toolbox.setinggeneration import SettingGen
-from toolbox.tools import buildings_cost
+from toolbox.settingparser import SettingsParser
+from core.navigate import Bot
 
 
 def create_rootlogger():
@@ -25,9 +26,9 @@ def create_rootlogger():
     fh.setFormatter(formatter)
     # add the handlers to the logger
     logger.addHandler(fh)
-
     logger.info('created logger')
     return logger
+
 
 def startup_check():
     """
@@ -39,9 +40,15 @@ def startup_check():
     logger.info('Calling SettingGen().check_general_settings')
     SettingGen().check_general_settings()
 
-    # Wurde die buildingscost.db schon initialisiert?
+    # Get all the price shenanigans
+    logger.info('Checking if db is ok.')
+    sp = SettingsParser()
+    sp.buildings_cost()
+    sp.unit_cost()
 
 logger = create_rootlogger()
-
 startup_check()
-#buildings_cost()
+
+myb = Bot()
+myb.building_manager()
+logger.info('\n'+'*'*100)
