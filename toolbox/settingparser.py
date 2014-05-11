@@ -6,6 +6,8 @@ import shelve
 from bs4 import BeautifulSoup
 import logging
 from base.datatypes import Ressources
+import os
+from toolbox.tools import colorprint
 
 
 class SettingsParser(object):
@@ -15,7 +17,6 @@ class SettingsParser(object):
     """
 
     def __init__(self):
-
         # Create a logger
         self.logger = logging.getLogger('main.SettingParser')
         self.logger.info('creating an instance of SettingGen')
@@ -23,13 +24,17 @@ class SettingsParser(object):
         #specify the path, where the shelve.db file gets stored
         self.config = configparser.ConfigParser()
         self.config.read('settings/settings.ini')
-        self.buildingtranslater = {'Hauptgebäude': 'main', 'Stall': 'stable', 'Werkstatt': 'garage', 'Schmiede': 'smith',
-                                   'Versammlungsplatz': 'place', 'Marktplatz': 'market', 'Bauernhof': 'farm', 'Speicher': 'storage',
+        self.buildingtranslater = {'Hauptgebäude': 'main', 'Stall': 'stable', 'Kaserne': 'barracks',
+                                   'Werkstatt': 'garage', 'Schmiede': 'smith',
+                                   'Versammlungsplatz': 'place', 'Marktplatz': 'market', 'Bauernhof': 'farm',
+                                   'Speicher': 'storage',
                                    'Versteck': 'hide', 'Wall': 'wall', 'Holzfäller': 'wood', 'Lehmgrube': 'stone',
                                    'Eisenmine': 'iron', 'Statue': 'statue', 'Adelshof': 'noble'}
-        self.unittranslater = {'Speerträger': 'spear', 'Schwertkämpfer': 'sword', 'Axtkämpfer': 'axe', 'Bogenschütze': 'archer',
+        self.unittranslater = {'Speerträger': 'spear', 'Schwertkämpfer': 'sword', 'Axtkämpfer': 'axe',
+                               'Bogenschütze': 'archer',
                                'Späher': 'spy', 'Leichte Kavallerie': 'light', 'Berittener Bogenschütze': 'marcher',
-                               'Schwere Kavallerie': 'heavy', 'Rammbock': 'ram', 'Katapult': 'catapult', 'Paladin': 'knight',
+                               'Schwere Kavallerie': 'heavy', 'Rammbock': 'ram', 'Katapult': 'catapult',
+                               'Paladin': 'knight',
                                'Adelsgeschlecht': 'snob'}
 
         # pathfinder
@@ -41,6 +46,10 @@ class SettingsParser(object):
         """
         Checks if a valid database already exists.
         """
+        if not os.path.exists(os.path.dirname(self.buildingpath)):
+            self.logger.info("Dir "+self.buildingpath+" did not exist. Created it.")
+            os.mkdir(os.path.dirname(self.buildingpath))
+
         shelf = shelve.open(self.buildingpath)
 
         for element in self.buildingtranslater:
@@ -55,7 +64,6 @@ class SettingsParser(object):
         shelf = shelve.open(self.unitpath)
         for element in self.unittranslater.values():
             if element not in shelf:
-                print(element, 'abbort')
                 return 0
         return 1
 
@@ -63,9 +71,9 @@ class SettingsParser(object):
         """
         This function is used to read the cost of each building from the 'help.die-staemme.de' page.
         It writes all the costs as a dictionairy with 3 parameter per level in a shelve-object called 'shelf'.
-        If the
         """
 
+        # Return if buildings are already stored
         if self.buildings_already_stored():
             self.logger.info('Buildings are already stored')
             return
@@ -76,6 +84,7 @@ class SettingsParser(object):
         #initialise shelve
         shelf = shelve.open(self.buildingpath, writeback=True)
 
+        colorprint("[-] Buildingscost not found.", "red")
         #get the required resources for every building in our list
         for element in self.buildingtranslater.keys():
 
@@ -87,7 +96,8 @@ class SettingsParser(object):
             soup = BeautifulSoup(html)
             table = soup.find_all('table')[-1]
 
-            #comes in, if premium features - which we ignore - are existent. (only for 'Holzfäller', 'Lehmgrube' und 'Eisenmine')
+            # comes in, if premium features - which we ignore - are existent.
+            # (only for 'Holzfäller', 'Lehmgrube' und 'Eisenmine')
             if 'Coinbag' in html:
                 rows = table.find_all('tr')[2:]
             else:
@@ -95,15 +105,14 @@ class SettingsParser(object):
 
             #get the row with all required resources per level
             for row in rows:
-
                 #have a look only on special cells
                 splitrow = row.find_all('td')
 
                 #get level, wood, stone and iron separate for each level
                 level = int(splitrow[0].get_text(strip=True))
-                wood = int(splitrow[1].get_text(strip=True).replace('.',''))
-                stone = int(splitrow[2].get_text(strip=True).replace('.',''))
-                iron = int(splitrow[3].get_text(strip=True).replace('.',''))
+                wood = int(splitrow[1].get_text(strip=True).replace('.', ''))
+                stone = int(splitrow[2].get_text(strip=True).replace('.', ''))
+                iron = int(splitrow[3].get_text(strip=True).replace('.', ''))
 
                 #create a dictionary with the required resources
                 dic = {'wood': wood, 'stone': stone, 'iron': iron}
@@ -112,8 +121,7 @@ class SettingsParser(object):
                 shelf[self.buildingtranslater[element]][level] = dic
                 shelf.sync()
 
-                print(element, shelf[self.buildingtranslater[element]][level])
-
+        colorprint("[+] Buildingscost fetched and stored succesfully.", "green")
         shelf.close()
 
     def unit_cost(self):
@@ -125,6 +133,7 @@ class SettingsParser(object):
             self.logger.info('units already stored')
             return
 
+        colorprint("[-] Unitcost not found.", "red")
         # Get html
         url = 'http://help.die-staemme.de/wiki/Einheitenübersicht'
         r = requests.get(url)
@@ -148,14 +157,17 @@ class SettingsParser(object):
 
             # store fetched data
             shelf[self.unittranslater[unitname]] = {'wood': wood, 'stone': stone, 'iron': iron, 'pop': pop}
+        colorprint("[+] Unitcost fetched and stored succesfully.", "green")
 
 
 def get_buildingprice(building, level):
-    level = int(level)
-    config=configparser.ConfigParser()
+    level, building = int(level), str(building)
+    config = configparser.ConfigParser()
     config.read('settings/settings.ini')
-    storagepath=config.get('storage', 'path')+'\\buildingcost.db'
-    shelf=shelve.open(storagepath)
+    storagepath = config.get('storage', 'path') + '\\buildingcost.db'
+    shelf = shelve.open(storagepath)
+    # TODO add not built buildings with lvl 0?
+
     answer = shelf[building][level]
     return Ressources(wood=answer['wood'], stone=answer['stone'], iron=answer['iron'])
 

@@ -25,7 +25,7 @@ class SettingGen(object):
             colorprint('Folder [settings] did not exist. Created it.', 'green')
 
         self.settingpath = "settings/settings.ini"
-        self.config=configparser.SafeConfigParser(allow_no_value=True)
+        self.config = configparser.ConfigParser(allow_no_value=True)
         self.config.read(self.settingpath)
 
     def check_general_settings(self):
@@ -54,7 +54,7 @@ class SettingGen(object):
 
         if not self.config.has_section('storage'):
             self.config.add_section('storage')
-            self.config.set('storage', 'path', os.path.join(os.path.expanduser('~'), 'bot_storage'))
+            self.config.set('storage', 'path', 'data')
             colorprint('[storage] in [{self.settingpath}] did not exist. Created it.'.format(**locals()), 'green')
 
         self.config.write(open(self.settingpath, 'w'))

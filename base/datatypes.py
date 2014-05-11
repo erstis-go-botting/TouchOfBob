@@ -5,6 +5,7 @@ from configparser import ConfigParser
 import datetime
 import shelve
 
+
 class Village(object):
     """
     Eine Klasse um Dörfer zu repräsentieren.
@@ -43,6 +44,7 @@ class Village(object):
             return '{self.villagename} from {self.playername} at ({self.x}|{self.y}) with {self.villagepoints} points.'.format(**locals())
         else:
             return 'Barbarian village at ({self.x}|{self.y}) with {self.villagepoints} points.'.format(**locals())
+
 
 class Ressources(object):
 
@@ -112,16 +114,39 @@ class Ressources(object):
 
 
 class TimedBuildings(object):
+    """ Proof of concept stuff.
+    Used for logging?
+    """
+
+    # TODO implement removal of old entries (eg: datetime.datetime.now() >
+    # TODO tb.db["under_construction"][0]['complete'].
 
     def __init__(self):
 
         self.config = ConfigParser()
         self.config.read('settings/settings.ini')
         self.storagepath = self.config.get('storage', 'path')
-        self.db = shelve.open(self.storagepath + '\\timedbuildings.db')
+        self.db = shelve.open(self.storagepath + '\\timedbuildings.db', flag="c", writeback=True)
+
+        # clear old elements
+        self.delete_old_elements()
+
+    def delete_old_elements(self):
+        """
+        Deletes elements which are completed.
+        """
+
+        # If there are no elements stored, quit with returncode 1
+        if "under_construction" not in self.db.keys() or not self.db["under_construction"]:
+            return 1
+
+        now = datetime.datetime.now()
+        for i, element in enumerate(self.db["under_construction"][:]):
+            if element["complete"] < now:
+                self.db["under_construction"].remove(element)
+        self.db.sync()
 
     def refresh(self):
-
         self.db.close()
         self.db = shelve.open(self.storagepath + '\\timedbuildings.db')
 
@@ -135,6 +160,31 @@ class TimedBuildings(object):
         else:
             self.db[key] = [{'art': art, 'level': level, 'complete': completed}]
         self.refresh()
+
+    def complete(self):
+        """
+        Returns time in minutes until next building is built.
+        """
+        if "under_construction" not in self.db.keys() or not self.db["under_construction"]:
+            return 0
+
+        timedelta = self.db["under_construction"][0]["complete"] - datetime.datetime.now()
+        minutes = int(timedelta.total_seconds() // 60)
+        seconds = int(timedelta.seconds) - minutes * 60
+
+        return str(minutes)+"."+str(seconds)
+
+    def info(self):
+        """
+        Returns type of building + level which is beeing built atm.
+        """
+        if "under_construction" not in self.db.keys() or not self.db["under_construction"]:
+            return 0
+
+        art = self.db["under_construction"][0]["art"]
+        level = self.db["under_construction"][0]["level"]
+        return str(art)+" "+str(level)
+
 
     def __str__(self):
         if 'under_construction' not in self.db:

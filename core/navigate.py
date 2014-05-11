@@ -12,6 +12,7 @@ import datetime
 from base.datatypes import TimedBuildings
 from base.datatypes import Ressources
 from toolbox.settingparser import get_buildingprice
+from toolbox.tools import colorprint
 
 
 class Bot(object):
@@ -44,8 +45,8 @@ class Bot(object):
         self.logger.info('Bot initialized.')
 
         # login (if necessary)
-        self.login()
-
+        if self.login():
+            colorprint("[+] Logged in.", "green")
 
     def login(self):
         """
@@ -55,10 +56,12 @@ class Bot(object):
 
         # if we are already logged in, we don't need to login again
         if self.is_logged_in():
-            print('Already logged in')
+            self.open('overview')
+            colorprint('[+] Already logged in', 'turq')
+            self.logger.info('Already logged in.')
             return
 
-        print('Logging in')
+        colorprint('[-] Not logged in. Initiating login procedure.', 'red')
         self.logger.info('Login procedure.')
 
         # fetch the credentials.
@@ -127,7 +130,6 @@ class Bot(object):
         for line in Bot.html.split('\n'):
             if 'var game_data' in line:
                 vg = line.split('=', 1)[1].strip()[:-1]
-                print(vg)
                 break
 
         try:
@@ -142,7 +144,8 @@ class Bot(object):
         # unfortunately we seem to need this ;(
         self.open('main')
 
-        url = "http://{self.world}.die-staemme.de/game.php?village={self.currentvillage}&ajaxaction=upgrade_building&h={self.csrf}" \
+        url = "http://{self.world}.die-staemme.de/game.php?" \
+              "village={self.currentvillage}&ajaxaction=upgrade_building&h={self.csrf}" \
               "&type=main&screen=main&id={building}&force=1&destroy=0&source={self.currentvillage}".format(**locals())
         resp = Bot.session.get(url).json()
         if resp['success'] != 'Das Gebäude wurde in Auftrag gegeben.':
@@ -160,21 +163,20 @@ class Bot(object):
 
         storage = TimedBuildings()
         if len(storage):
-            print('Something is beeing constructed right now. not sexy.')
+            colorprint('[*] '+storage.info()+' is beeing constructed right now. Finished in: '+storage.complete()+".",
+                       "yellow")
             return
         next_building = self.get_next_building()
-        print(next_building)
-        print(self.ressources)
-        print(self.buildings[next_building])
 
         level = self.buildings[next_building]+1
+
         # Get price of next building, with level: currentlevel +1
         price = get_buildingprice(next_building, level)
 
         # do we have enough to build this shit?
         if self.ressources > price:
-            print('trying to build', next_building)
             response = self.construct_building(next_building, level)
+            colorprint('[*] Started construction of '+next_building+".", "turq")
             storage.add(art=next_building, level=level, completed=response)
 
 

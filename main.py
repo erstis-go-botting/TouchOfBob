@@ -1,8 +1,9 @@
 # coding=utf-8
-__author__='sudo'
+__author__ = 'sudo'
 
 import logging
 import os
+import time
 from toolbox.setinggeneration import SettingGen
 from toolbox.settingparser import SettingsParser
 from core.navigate import Bot
@@ -37,18 +38,24 @@ def startup_check():
     """
 
     # Sind die Settings in Ordnung?
-    logger.info('Calling SettingGen().check_general_settings')
+    mylogger.info('Calling SettingGen().check_general_settings')
     SettingGen().check_general_settings()
 
     # Get all the price shenanigans
-    logger.info('Checking if db is ok.')
+    mylogger.info('Checking if db is ok.')
     sp = SettingsParser()
     sp.buildings_cost()
     sp.unit_cost()
 
-logger = create_rootlogger()
-startup_check()
 
-myb = Bot()
-myb.building_manager()
-logger.info('\n'+'*'*100)
+if __name__ == '__main__':
+    mylogger = create_rootlogger()
+    startup_check()
+
+    while 1:
+        myb = Bot()
+        myb.building_manager()
+        mylogger.info('\n'+'*'*100)
+        print('\n' + '*' * 100)
+        time.sleep(30)
+
