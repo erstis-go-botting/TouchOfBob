@@ -7,6 +7,7 @@ import time
 from toolbox.setinggeneration import SettingGen
 from toolbox.settingparser import SettingsParser
 from core.navigate import Bot
+import sys
 
 
 def create_rootlogger():
@@ -48,14 +49,27 @@ def startup_check():
     sp.unit_cost()
 
 
+def close_and_sleep():
+    """
+    A function to end the mainloop. Sleeps and logs stuff.
+    """
+    mylogger.info('\n' + '*' * 100)
+
+    print()
+    for i in range(100):
+        print('*' * 1, end="")
+        sys.stdout.flush()
+        time.sleep(300/100)
+    print()
+
+
 if __name__ == '__main__':
     mylogger = create_rootlogger()
     startup_check()
 
     while 1:
-        myb = Bot()
+        myb = Bot()  # TODO move out of loop
         myb.building_manager()
-        mylogger.info('\n'+'*'*100)
-        print('\n' + '*' * 100)
-        time.sleep(30)
+        myb.unit_manager()
+        close_and_sleep()
 

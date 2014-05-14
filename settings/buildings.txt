@@ -23,8 +23,8 @@ wood 9
 stone 7
 iron 6
 stone 9
+wall 10
 wood 10
-wall 1
 market 2
 main 4
 main 5

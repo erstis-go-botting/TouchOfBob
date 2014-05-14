@@ -99,23 +99,25 @@ class Ressources(object):
         self.wood += other.wood
         self.iron += other.iron
         self.stone += other.stone
+        return self
 
     def __sub__(self, other):
         """ Subtract two instances of type Ressources from each other"""
         self.wood -= other.wood
         self.stone -= other.stone
         self.iron -= other.iron
+        return self
 
     def __mul__(self, other):
         """ "Multiplies some Value to each ressource"""
         self.wood *= other
-        self.stone *= other.stone
-        self.iron *= other.iron
+        self.stone *= other
+        self.iron *= other
+        return self
 
 
 class TimedBuildings(object):
     """ Proof of concept stuff.
-    Used for logging?
     """
 
     # TODO implement removal of old entries (eg: datetime.datetime.now() >
@@ -202,3 +204,30 @@ class TimedBuildings(object):
 
     def __del__(self):
         self.db.close()
+
+
+class Unit(object):
+    """
+    Easily access information about units
+    """
+
+    def __init__(self):
+        self.config = ConfigParser()
+        self.config.read('settings/settings.ini')
+        storagepath = self.config.get('storage', 'path')
+        self.db = shelve.open(storagepath + '\\unitcost.db', flag="c", writeback=True)
+
+    def unitlist(self):
+        """Returns a list containing all
+         units.
+        """
+        return list(self.db.keys())
+
+    def getprice(self, unit):
+        """
+        Return the price of a unit wrapped in a Ressources object
+        """
+        lookup = self.db[unit]
+        return Ressources(wood=lookup["wood"], iron=lookup["iron"], stone=lookup["stone"])
+
+

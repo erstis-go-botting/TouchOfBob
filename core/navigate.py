@@ -9,10 +9,10 @@ import requests
 import logging
 from json import loads
 import datetime
-from base.datatypes import TimedBuildings
-from base.datatypes import Ressources
+from base.datatypes import *
 from toolbox.settingparser import get_buildingprice
 from toolbox.tools import colorprint
+import json
 
 
 class Bot(object):
@@ -28,11 +28,6 @@ class Bot(object):
     def __init__(self):
         # Bot.session ist eine session vom requests modul
 
-        self.buildings = 'Not initialized yet. Will be initialized with first self.open call.'
-        self.gamedat = 'Not initialized yet. Will be initialized with first self.open call.'
-        self.csrf = 'Not initialized yet. Will be initialized with first self.open call.'
-        self.currentvillage = 'Not initialized yet. Will be initialized with first self.open call.'
-        self.ressources = 'Not initialized yet. Will be initialized with first self.open call.'
 
         self.config = configparser.ConfigParser()
         self.config.read(r'settings\settings.ini')
@@ -43,6 +38,15 @@ class Bot(object):
         # Create a logger
         self.logger = logging.getLogger('main.Bot')
         self.logger.info('Bot initialized.')
+
+        if not self.is_logged_in():
+            self.buildings = 'Not initialized yet. Will be initialized with first self.open call.'
+            self.gamedat = 'Not initialized yet. Will be initialized with first self.open call.'
+            self.csrf = 'Not initialized yet. Will be initialized with first self.open call.'
+            self.currentvillage = 'Not initialized yet. Will be initialized with first self.open call.'
+            self.ressources = 'Not initialized yet. Will be initialized with first self.open call.'
+        else:
+            self.open("overview")
 
         # login (if necessary)
         if self.login():
@@ -56,7 +60,8 @@ class Bot(object):
 
         # if we are already logged in, we don't need to login again
         if self.is_logged_in():
-            self.open('overview')
+            # I dont think we need this, do we?
+            #self.open('overview')
             colorprint('[+] Already logged in', 'turq')
             self.logger.info('Already logged in.')
             return
@@ -80,12 +85,12 @@ class Bot(object):
 
         return 1 if self.is_logged_in() else 0
 
-    @staticmethod
-    def is_logged_in():
+    def is_logged_in(self):
         """
         Checks if self.br is currently logged in.
         Returns 1 if is logged in else 0.
         """
+        Bot.html = Bot.session.get("http://{s}.die-staemme.de/game.php?screen=overview".format(s=self.world)).text
         return 1 if 'var game_data' in Bot.html else 0
 
     def open(self, place):
@@ -109,7 +114,15 @@ class Bot(object):
         """
         Extracts data from 'settings\buildings.txt'
         and sets the variable next_building.
+        Returns 'storage' if population close to max_population.
         """
+        pop = int(self.gamedat["village"]["pop"])
+        pop_max = int(self.gamedat["village"]["pop_max"])
+
+        if int(pop_max) * 0.7 < pop:
+            return "storage"
+
+
         fileo = open(r'settings\buildings.txt', 'r').readlines()
         for line in fileo:
             line = line.strip().split()
@@ -179,10 +192,54 @@ class Bot(object):
             colorprint('[*] Started construction of '+next_building+".", "turq")
             storage.add(art=next_building, level=level, completed=response)
 
+    def unit_manager(self):
+        """
+        Builds units. Gets things done. Is awesome
+        """
 
+        u = Unit()
+        tb = TimedBuildings()
 
+        def default_build():
+            # if nothing is beeing constructed right now, don't build units
+            if not len(tb):
+                return 0
+            if self.ressources > u.getprice("spear")*5:
+                self.make_units("spear", 5)
+            elif self.ressources > u.getprice("spear"):
+                self.make_units("spear", 1)
+        default_build()
 
+    def make_units(self, unit, quantity):
+        """
+        Builds units. Returns 0 on error; 1 on success; -1 on unexpected behaviour.
+        """
+        # REQUEST FOR TRAINING 1 SPEAR:
+        # http://de105.die-staemme.de/game.php?
+        #   village=37374&ajaxaction=train&h=2806&mode=train&screen=barracks&&client_time=1399901564
+        # h = %csrf%
+        # type: POST
+        # data: units[spear] = 1
 
+        # Send buildrequest
+        data = {"units[%s]" % unit: quantity}
+        response = self.session.post("http://de105.die-staemme.de/game.php?village=37374&ajaxaction=train&"
+                                     "h={self.csrf}&mode=train&screen=barracks".format(**locals()),
+                                     data)
+        response = json.loads(response.text)
+
+        # Print stuff & return
+        if "error" in response.keys():
+            colorprint("Failed building "+unit+" (%s)" % quantity, "red")
+            colorprint("[-] Error: "+response["error"], "red")
+            return 0
+        elif "success" in response.keys():
+            colorprint("[+] Started building " + unit + " (%s)" % quantity, "turq")
+            return 1
+        else:
+            colorprint("Unexpected response in function make units.", "red")
+            colorprint("response", "red")
+            return -1
 
 
 class VarGameDataHandler(object):
