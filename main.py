@@ -69,7 +69,12 @@ if __name__ == '__main__':
 
     while 1:
         myb = Bot()  # TODO move out of loop
+
         myb.building_manager()
         myb.unit_manager()
         close_and_sleep()
 
+
+# how to get building time efficiently:
+# if: soup.find("div", class_="l_main").find("span", class_="timer"):
+#   print(soup.find("div", class_="l_main").find("span", class_="timer").text)

@@ -50,7 +50,7 @@ class Bot(object):
 
         # login (if necessary)
         if self.login():
-            colorprint("[+] Logged in.", "green")
+            print("[+] Logged in.")
 
     def login(self):
         """
@@ -62,11 +62,11 @@ class Bot(object):
         if self.is_logged_in():
             # I dont think we need this, do we?
             #self.open('overview')
-            colorprint('[+] Already logged in', 'turq')
+            print('[+] Already logged in')
             self.logger.info('Already logged in.')
             return
 
-        colorprint('[-] Not logged in. Initiating login procedure.', 'red')
+        print('[-] Not logged in. Initiating login procedure.')
         self.logger.info('Login procedure.')
 
         # fetch the credentials.
@@ -120,7 +120,7 @@ class Bot(object):
         pop_max = int(self.gamedat["village"]["pop_max"])
 
         if int(pop_max) * 0.7 < pop:
-            return "storage"
+            return "farm"
 
 
         fileo = open(r'settings\buildings.txt', 'r').readlines()
@@ -176,8 +176,7 @@ class Bot(object):
 
         storage = TimedBuildings()
         if len(storage):
-            colorprint('[*] '+storage.info()+' is beeing constructed right now. Finished in: '+storage.complete()+".",
-                       "yellow")
+            print('[*] '+storage.info()+' is beeing constructed right now. Finished in: '+storage.complete()+".")
             return
         next_building = self.get_next_building()
 
@@ -204,15 +203,26 @@ class Bot(object):
             # if nothing is beeing constructed right now, don't build units
             if not len(tb):
                 return 0
-            if self.ressources > u.getprice("spear")*5:
-                self.make_units("spear", 5)
-            elif self.ressources > u.getprice("spear"):
-                self.make_units("spear", 1)
+
+            build_units = []
+            if self.buildings["barracks"] >= 3:
+                build_units.append("axe")
+            else:
+                build_units.append("spear")
+
+            # build that
+            for unit in build_units:
+                if self.ressources > u.getprice(unit)*3:
+                    self.make_units(unit, 3)
+
+                elif self.ressources > u.getprice(unit):
+                    self.make_units(unit, 1)
+
         default_build()
 
     def make_units(self, unit, quantity):
         """
-        Builds units. Returns 0 on error; 1 on success; -1 on unexpected behaviour.
+        Builds units. Returns (0, errorcode) on error; (1, msg) on success; -1 on unexpected behaviour.
         """
         # REQUEST FOR TRAINING 1 SPEAR:
         # http://de105.die-staemme.de/game.php?
@@ -224,18 +234,17 @@ class Bot(object):
         # Send buildrequest
         data = {"units[%s]" % unit: quantity}
         response = self.session.post("http://de105.die-staemme.de/game.php?village=37374&ajaxaction=train&"
-                                     "h={self.csrf}&mode=train&screen=barracks".format(**locals()),
-                                     data)
+                                     "h={self.csrf}&mode=train&screen=barracks".format(**locals()), data)
         response = json.loads(response.text)
 
         # Print stuff & return
         if "error" in response.keys():
             colorprint("Failed building "+unit+" (%s)" % quantity, "red")
             colorprint("[-] Error: "+response["error"], "red")
-            return 0
+            return 0, response["error"]
         elif "success" in response.keys():
             colorprint("[+] Started building " + unit + " (%s)" % quantity, "turq")
-            return 1
+            return 1, response["msg"]
         else:
             colorprint("Unexpected response in function make units.", "red")
             colorprint("response", "red")
