@@ -39,8 +39,8 @@ class SettingsParser(object):
 
         # pathfinder
         self.storagepath = self.config.get('storage', 'path')
-        self.buildingpath = self.storagepath + '\\buildingcost.db'
-        self.unitpath = self.storagepath + '\\unitcost.db'
+        self.buildingpath = self.storagepath + os.path.sep +'buildingcost.db'
+        self.unitpath = self.storagepath + os.path.sep + 'unitcost.db'
 
     def buildings_already_stored(self):
         """

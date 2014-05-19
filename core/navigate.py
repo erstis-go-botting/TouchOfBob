@@ -9,6 +9,7 @@ import requests
 import logging
 from json import loads
 import datetime
+from bs4 import BeautifulSoup
 from base.datatypes import *
 from toolbox.settingparser import get_buildingprice
 from toolbox.tools import colorprint
@@ -110,6 +111,37 @@ class Bot(object):
                                      iron=self.gamedat['village']['iron'])
         self.buildings = VarGameDataHandler(self.gamedat).get_buildings()
 
+    @staticmethod
+    def timestring_to_int(timestring):
+        """
+        Takes something like 2:02:36
+        and returns 122 (60*2 + 02)
+        """
+        timestring = str(timestring)
+        temp = timestring.split(":")
+        if len(temp) != 3:
+            print("timestring_to_int got unexpected format. Expected something like: 2:02:36. Got: "+timestring)
+            return 0
+        return 60*int(temp[0]) + int(temp[1])
+
+    def get_barrack_buildtime(self):
+        """
+        Opens overview and returns the remaining buildtime of barrack-units
+        in minutes.
+        """
+        if not self.gamedat["player"]["premium"]:
+            print("Function get_barrac_buildtime is not implemented for non-premium player.")
+            return 0
+
+        self.open("overview")
+        # how to get building time efficiently:
+        # if: soup.find("div", class_="l_main").find("span", class_="timer"):
+        #   print(soup.find("div", class_="l_main").find("span", class_="timer").text)
+        soup = BeautifulSoup(self.html)
+        if soup.find("div", class_="l_barracks").find("span", class_="timer"):
+            timestring = soup.find("div", class_="l_main").find("span", class_="timer").text
+            return self.timestring_to_int(timestring)
+
     def get_next_building(self):
         """
         Extracts data from 'settings\buildings.txt'
@@ -203,6 +235,11 @@ class Bot(object):
             # if nothing is beeing constructed right now, don't build units
             if not len(tb):
                 return 0
+
+            # if the unitloop is long, don't build units either
+            if self.get_barrack_buildtime() > 60:
+                return 0
+            # TODO implement for stable/garage
 
             build_units = []
             if self.buildings["barracks"] >= 3:
