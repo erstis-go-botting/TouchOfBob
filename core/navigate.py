@@ -14,6 +14,7 @@ from base.datatypes import *
 from toolbox.settingparser import get_buildingprice
 from toolbox.tools import colorprint
 import json
+from os import path
 
 
 class Bot(object):
@@ -31,7 +32,7 @@ class Bot(object):
 
 
         self.config = configparser.ConfigParser()
-        self.config.read(r'settings\settings.ini')
+        self.config.read(r'settings'+path.sep+'settings.ini')
 
         # get some settings which we will use everywhere.
         self.world = self.config.get('credentials', 'world')
@@ -155,7 +156,7 @@ class Bot(object):
             return "farm"
 
 
-        fileo = open(r'settings\buildings.txt', 'r').readlines()
+        fileo = open('settings'+path.sep+'buildings.txt', 'r').readlines()
         for line in fileo:
             line = line.strip().split()
             if line:
