@@ -4,6 +4,7 @@
 from configparser import ConfigParser
 import datetime
 import shelve
+from os import path
 
 
 class Village(object):
@@ -126,9 +127,9 @@ class TimedBuildings(object):
     def __init__(self):
 
         self.config = ConfigParser()
-        self.config.read('settings/settings.ini')
+        self.config.read('settings'+path.sep+'settings.ini')
         self.storagepath = self.config.get('storage', 'path')
-        self.db = shelve.open(self.storagepath + '\\timedbuildings.db', flag="c", writeback=True)
+        self.db = shelve.open(self.storagepath + path.sep + 'timedbuildings.db', flag="c", writeback=True)
 
         # clear old elements
         self.delete_old_elements()
@@ -150,7 +151,7 @@ class TimedBuildings(object):
 
     def refresh(self):
         self.db.close()
-        self.db = shelve.open(self.storagepath + '\\timedbuildings.db')
+        self.db = shelve.open(self.storagepath + path.sep +'timedbuildings.db')
 
     def add(self, art, level, completed):
 
@@ -215,7 +216,7 @@ class Unit(object):
         self.config = ConfigParser()
         self.config.read('settings/settings.ini')
         storagepath = self.config.get('storage', 'path')
-        self.db = shelve.open(storagepath + '\\unitcost.db', flag="c", writeback=True)
+        self.db = shelve.open(storagepath + path.sep +'unitcost.db', flag="c", writeback=True)
 
     def unitlist(self):
         """Returns a list containing all
