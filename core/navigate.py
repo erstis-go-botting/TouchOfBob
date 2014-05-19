@@ -238,7 +238,7 @@ class Bot(object):
                 return 0
 
             # if the unitloop is long, don't build units either
-            if self.get_barrack_buildtime() > 60:
+            if not self.buildings["barracks"] or self.get_barrack_buildtime() > 60:
                 return 0
             # TODO implement for stable/garage
 
@@ -279,10 +279,10 @@ class Bot(object):
         if "error" in response.keys():
             colorprint("Failed building "+unit+" (%s)" % quantity, "red")
             colorprint("[-] Error: "+response["error"], "red")
-            return 0, response["error"]
+            return 0
         elif "success" in response.keys():
             colorprint("[+] Started building " + unit + " (%s)" % quantity, "turq")
-            return 1, response["msg"]
+            return 1
         else:
             colorprint("Unexpected response in function make units.", "red")
             colorprint("response", "red")
