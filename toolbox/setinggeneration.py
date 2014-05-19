@@ -24,7 +24,7 @@ class SettingGen(object):
             os.makedirs('settings/')
             colorprint('Folder [settings] did not exist. Created it.', 'green')
 
-        self.settingpath = "settings/settings.ini"
+        self.settingpath = "settings"+os.path.sep+"settings.ini"  # os.path.sep = portability shenanigans
         self.config = configparser.ConfigParser(allow_no_value=True)
         self.config.read(self.settingpath)
 
