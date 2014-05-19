@@ -164,7 +164,7 @@ def get_buildingprice(building, level):
     level, building = int(level), str(building)
     config = configparser.ConfigParser()
     config.read('settings/settings.ini')
-    storagepath = config.get('storage', 'path') + os.path + 'buildingcost.db'
+    storagepath = config.get('storage', 'path') + os.path.sep + 'buildingcost.db'
     shelf = shelve.open(storagepath)
     # TODO add not built buildings with lvl 0?
 
