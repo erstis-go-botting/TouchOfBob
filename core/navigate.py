@@ -15,6 +15,7 @@ from toolbox.settingparser import get_buildingprice
 from toolbox.tools import colorprint
 import json
 from os import path
+import getpass
 
 
 class Bot(object):
@@ -142,6 +143,8 @@ class Bot(object):
         if soup.find("div", class_="l_barracks").find("span", class_="timer"):
             timestring = soup.find("div", class_="l_main").find("span", class_="timer").text
             return self.timestring_to_int(timestring)
+        else:
+            return 0
 
     def get_next_building(self):
         """
