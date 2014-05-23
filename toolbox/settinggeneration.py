@@ -64,16 +64,17 @@ class SettingGen(object):
         Generates the standard skeleton for villagesettings.ini
         """
 
-        settingpath=self.config.get('storage', 'worldsettingspath')
-        config=configparser.SafeConfigParser(allow_no_value=True)
-        config.read(settingpath)
+        village_settings = "settings" + os.path.sep + "villagesettings.ini"
+        config=configparser.ConfigParser(allow_no_value=True)
+        config.read(village_settings)
 
         village_id = str(village_id)
 
         if config.has_section(village_id):
-            print('woah, stop right there, that shit allready exists.')
             return
 
+        config.add_section('description')
+        config.set('description', '# Hier koennen individuelle Einstellungen zu einzelnen Doerfern gesetzt werden.')
         config.add_section(village_id)
 
         config.set(village_id, '# {village_name}'.format(**locals()))
@@ -85,24 +86,12 @@ class SettingGen(object):
         config.set(village_id, 'church', '0')
         config.set(village_id, 'Dorftyp', 'off')
 
-        with open(settingpath, 'w') as cfile:
+
+
+        with open(village_settings, 'w') as cfile:
             config.write(cfile)
-            time.sleep(1)
 
-    def generate_description(self, path):
-        """
-        a function to a add a little bit of
-        description to villagesettings.ini
-        """
 
-        self.config.add_section('description')
-
-        self.config.set('description', '# Hier können individuelle Einstellungen zu einzelnen Dörfern gesetzt werden.')
-        self.config.set('description', '# Die Settings in settings/settings.ini/control sind immernoch relevant.')
-        self.config.set('description', '# Diese werden quasi als globale Settings verwendet.')
-
-        with open(path, 'w') as cfile:
-            self.config.write(cfile)
 
     def generate_description_general_settings(self):
         """

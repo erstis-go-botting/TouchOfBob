@@ -4,10 +4,11 @@ __author__ = 'sudo'
 import logging
 import os
 import time
-from toolbox.setinggeneration import SettingGen
+from toolbox.settinggeneration import SettingGen
 from toolbox.settingparser import SettingsParser
 from core.navigate import Bot
 import sys
+from core.Parser import PrefechParser
 
 
 def create_rootlogger():
@@ -72,9 +73,14 @@ if __name__ == '__main__':
 
         myb.building_manager()
         myb.unit_manager()
+
         close_and_sleep()
 
 
 # how to get building time efficiently:
 # if: soup.find("div", class_="l_main").find("span", class_="timer"):
 #   print(soup.find("div", class_="l_main").find("span", class_="timer").text)
+
+# how to get map json efficiently:
+# http://de105.die-staemme.de/map.php?640_480=1&660_480=1&640_500=1&660_500=1
+# gets map with offsets 640_480=1&660_480=1&640_500=1&660_500=1

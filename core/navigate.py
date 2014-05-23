@@ -8,15 +8,16 @@ import configparser
 import requests
 import logging
 from json import loads
-import datetime
+import threading
 from bs4 import BeautifulSoup
 from base.datatypes import *
 from toolbox.settingparser import get_buildingprice
+from toolbox import settinggeneration
 from toolbox.tools import colorprint
 import json
 from os import path
-import getpass
-
+import re
+import time
 
 class Bot(object):
     """
@@ -25,13 +26,15 @@ class Bot(object):
 
     # Create a lovely session!
     session = requests.Session()
+    a = requests.adapters.HTTPAdapter(max_retries=3)
+    session.mount('http://', a)
     session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/17.0 Firefox/17.0'})
     html = 'Not initialized yet. Will be initialized with first self.open call.'
 
     def __init__(self):
         # Bot.session ist eine session vom requests modul
 
-
+        self.ALL_UNITS = ["axe", "spear", "sword", "archer", "spy", "light", "heavy", "catapult", "ram", "marcher"]
         self.config = configparser.ConfigParser()
         self.config.read(r'settings'+path.sep+'settings.ini')
 
@@ -51,9 +54,154 @@ class Bot(object):
         else:
             self.open("overview")
 
-        # login (if necessary)
-        if self.login():
-            print("[+] Logged in.")
+        while 1:
+            # login (if necessary)
+            if self.login():
+                print("[+] Logged in.")
+                break
+            else:
+                colorprint("[-] Failed to login. Trying again.", "red")
+                time.sleep(5)
+
+
+        # Fetch other data multithreaded
+        self.research = dict()
+        self.units = dict()
+        self.villagesettings = dict()
+        self.grab_infos()
+
+    def grab_infos(self):
+        """
+        Fetches various stuff multithreaded.
+        """
+        threads = []
+        coollock = threading.Lock()
+
+        # init self.research
+        research = threading.Thread(target=self._initresearch, args=(coollock,))
+        research.start()
+        threads.append(research)
+
+        # init self.units
+        units = threading.Thread(target=self._units, args=(coollock,))
+        units.start()
+        threads.append(units)
+
+        # init self.village_settings
+        village_settings = threading.Thread(target=self._getvillageinfo, args=(coollock,))
+        village_settings.start()
+        threads.append(village_settings)
+
+        for t in threads:
+            t.join()
+
+    def _getvillageinfo(self, coollock):
+        """
+        Gets villagesettings from settingsfile
+        """
+        S = settinggeneration.SettingGen()
+        S.generate_skeleton_villagesettings(village_id=self.gamedat["village"]["id"],
+                                            village_name=self.gamedat["village"]["name"])
+
+        village_settings = "settings" + path.sep + "villagesettings.ini"
+        villageconfig = configparser.ConfigParser(allow_no_value=True)
+        villageconfig.read(village_settings)
+        id_ = str(self.gamedat["village"]["id"])
+        self.villagesettings["make_coins"] = villageconfig.get(id_, "make_coins")
+        self.villagesettings["do_trade"] = villageconfig.get(id_, "do_trade")
+        self.villagesettings["do_construct"] = villageconfig.get(id_, "do_construct")
+        self.villagesettings["church"] = villageconfig.get(id_, "church")
+        self.villagesettings["do_recruit"] = villageconfig.get(id_, "do_recruit")
+        self.villagesettings["do_farm"] = villageconfig.get(id_, "do_farm")
+        self.villagesettings["dorftyp"] = villageconfig.get(id_, "dorftyp")
+
+
+    def _initresearch(self, coollock):
+        """
+        Fetches and sets self.research.
+        Fired up in a seperate thread by self.grab_infos()
+        """
+        if not self.buildings["smith"]:
+            self.research = {"spear": 1, "axe": 0, "sword": 0, "archer": 0, "light": 0, "spy": 0, "marcher": 0,
+                             "heavy": 0, "ram": 0, "catapult": 0}
+
+        else:
+            with coollock:
+                self.open("smith")
+                soup = BeautifulSoup(self.html)
+            researched = str(soup.find("div", id="tech_list").find_all("table", class_="vis tall")[0])
+            for u in self.ALL_UNITS:
+                # researchable == 2, researched == 1, not researched == 0
+                self.research[u] = 2 if u+"_grey" in researched else 1 if u in researched else 0
+
+    def _units(self, coollock):
+        """Fetches and sets self.unitbuildtime.
+        Fired up in a seperate thread by self.grab_infos()
+        """
+        barrackunits = ["axe", "spear", "sword", "archer"]
+        stableunits = ["spy", "light", "marcher", "heavy"]
+        garageunits = ["ram", "catapult"]
+
+        # barracks
+        if not self.buildings["barracks"]:
+            for u in barrackunits:
+                self.units[u] = {"available": 0, "all": 0}
+
+        else:
+            with coollock:
+                self.open("barracks")
+                soup = BeautifulSoup(self.html)
+            relevant_lines =soup.find_all("tr", class_="row_a")
+            for line in relevant_lines:
+                available, all_ = line.find_all("td", style="text-align: center")[0].text.split("/")
+                onclick = line.find("a", class_="unit_link")["onclick"]
+                art = re.findall(r"'(.+)'", onclick)[0]
+                self.units[art] = {"available": int(available), "all": int(all_)}
+            # fill with zero
+            for u in barrackunits:
+                if u not in self.units:
+                    self.units[u] = {"available": 0, "all": 0}
+
+        # stable
+        if not self.buildings["stable"]:
+            for u in stableunits:
+                self.units[u] = {"available": 0, "all": 0}
+
+        else:
+            with coollock:
+                self.open("stable")
+                soup = BeautifulSoup(self.html)
+            relevant_lines = soup.find_all("tr", class_="row_a")
+            for line in relevant_lines:
+                available, all_ = line.find_all("td", style="text-align: center")[0].text.split("/")
+                onclick = line.find("a", class_="unit_link")["onclick"]
+                art = re.findall(r"'(.+)'", onclick)[0]
+                self.units[art] = {"available": int(available), "all": int(all_)}
+            # fill with zero
+            for u in stableunits:
+                if u not in self.units:
+                    self.units[u] = {"available": 0, "all": 0}
+
+        # garage
+        if not self.buildings["garage"]:
+            for u in garageunits:
+                self.units[u] = {"available": 0, "all": 0}
+
+        else:
+            with coollock:
+                self.open("garage")
+                soup = BeautifulSoup(self.html)
+            relevant_lines = soup.find_all("tr", class_="row_a")
+            for line in relevant_lines:
+                available, all_ = line.find_all("td", style="text-align: center")[0].text.split("/")
+                onclick = line.find("a", class_="unit_link")["onclick"]
+                art = re.findall(r"'(.+)'", onclick)[0]
+                self.units[art] = {"available": int(available), "all": int(all_)}
+            # fill with zero
+            for u in garageunits:
+                if u not in self.units:
+                    self.units[u] = {"available": 0, "all": 0}
+
 
     def login(self):
         """
@@ -214,8 +362,8 @@ class Bot(object):
         if len(storage):
             print('[*] '+storage.info()+' is beeing constructed right now. Finished in: '+storage.complete()+".")
             return
-        next_building = self.get_next_building()
 
+        next_building = self.get_next_building()
         level = self.buildings[next_building]+1
 
         # Get price of next building, with level: currentlevel +1
@@ -234,6 +382,7 @@ class Bot(object):
 
         u = Unit()
         tb = TimedBuildings()
+
 
         def default_build():
             # if nothing is beeing constructed right now, don't build units
@@ -259,7 +408,29 @@ class Bot(object):
                 elif self.ressources > u.getprice(unit):
                     self.make_units(unit, 1)
 
-        default_build()
+        def primitive_build():
+            """ called if "dorftyp" == "off" and level of stable == 0
+            """
+            if self.units["spear"]["all"] < 50:
+                build_units = ["spear"]
+            else:
+                build_units = ["axe"]
+
+            for unit in build_units:
+                if self.research[unit] != 1:
+                    continue
+
+                if self.ressources > u.getprice(unit) * 3:
+                    self.make_units(unit, 3)
+
+                elif self.ressources > u.getprice(unit):
+                    self.make_units(unit, 1)
+
+        if self.villagesettings["dorftyp"] == "off":
+            if not self.buildings["stable"]:
+                primitive_build()
+        else:
+            default_build()
 
     def make_units(self, unit, quantity):
         """

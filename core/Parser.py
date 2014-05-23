@@ -15,22 +15,28 @@ class PrefechParser(object):
     a nicely parsed object.
     """
     # TODO remove self
+    parsed_map = dict()
 
-    def __init__(self, raw_prefech):
-        self.raw_prefech = loads(raw_prefech.split(' = ', 1)[1][:-1])
+    def __init__(self):
+
         # TODO replace with actual coordinates
         self.own_coordinates = {"x": 100, "y": 100}
-        parsed_map = self.analyze_map()
-        print('done')
 
-    def analyze_map(self):
+
+
+
+    def analyze_and_add_to_map(self, mapjson):
         """
         Does the whole work!
         """
+        try:
+            self.mapjson = loads(str(mapjson).split(' = ', 1)[1][:-1])
+        except IndexError:
+            self.mapjson = loads(str(mapjson))
 
         parsed_map = dict()
 
-        for superlist in self.raw_prefech:
+        for superlist in self.mapjson:
 
             base_x, base_y = superlist['data']['x'], superlist['data']['y']
             sublist = superlist['data']['villages']
@@ -54,9 +60,9 @@ class PrefechParser(object):
 
             for x_modifier in sublist:
                 for y_modifier in sublist[x_modifier]:
-                    self._analyze_helper(x_modifier, y_modifier, sublist)
+                    self._analyze_helper(x_modifier, y_modifier, sublist, base_x, base_y, superlist)
 
-    def _analyze_helper(self, x_modifier, y_modifier, sublist):
+    def _analyze_helper(self, x_modifier, y_modifier, sublist, base_x, base_y, superlist):
         """A helper function
         """
 
@@ -115,7 +121,7 @@ class PrefechParser(object):
                                     'village_name': village_name,
                                     'village_points': int(village[3].replace('.', ''))}
 
-            parsed_map[village_id] = {'x': village_x, 'y': village_y, 'player_id': player_id,
+            self.parsed_map[village_id] = {'x': village_x, 'y': village_y, 'player_id': player_id,
                                       'points': int(player_points.replace('.', '')), 'noobprot': noobprot,
                                       'barb': barbarian, 'distance': distance,
                                       'village_id': village_id, 'village_name': village_name}
